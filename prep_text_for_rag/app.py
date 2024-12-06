@@ -1,10 +1,7 @@
 from dotenv import load_dotenv
 import os
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 
-
-from langchain_community.graphs import Neo4jGraph
-from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
@@ -15,10 +12,11 @@ NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
 NEO4J_DATABASE = os.environ["NEO4J_DATABASE"]
 AUTH = (NEO4J_USERNAME, NEO4J_PASSWORD)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT")
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT")
 
-chat = ChatOpenAI(api_key=OPENAI_API_KEY)
+accessKeyId = os.getenv("accessKeyId")
+secretAccessKey = os.getenv("secretAccessKey")
 
 
 kg = Neo4jGraph(
@@ -28,26 +26,28 @@ kg = Neo4jGraph(
     database=NEO4J_DATABASE,
 )
 
-# kg.query(
-#     """
-#     CREATE VECTOR INDEX health_providers_embeddings IF NOT EXISTS
-#     FOR (hp:HealthcareProvider) ON (hp.comprehensiveEmbedding)
-#     OPTIONS {
-#       indexConfig: {
-#         `vector.dimensions`: 1536,
-#         `vector.similarity_function`: 'cosine'
-#       }
-#     }
-#     """
-# )
+kg.query(
+    """
+    CREATE VECTOR INDEX health_providers_embeddings IF NOT EXISTS
+    FOR (hp:HealthcareProvider) ON (hp.comprehensiveEmbedding)
+    OPTIONS {
+      indexConfig: {
+        `vector.dimensions`: 1536,
+        `vector.similarity_function`: 'cosine'
+      }
+    }
+    """
+)
 
 # # test to see if the index was created
-# res = kg.query(
-#     """
-#   SHOW VECTOR INDEXES
-#   """
-# )
-# print(res)
+res = kg.query(
+    """
+  SHOW VECTOR INDEXES
+  """
+)
+print(res)
+
+print("=" * 50)
 
 # kg.query(
 #     """
@@ -55,45 +55,54 @@ kg = Neo4jGraph(
 #     WHERE hp.bio IS NOT NULL
 #     WITH hp, genai.vector.encode(
 #         hp.bio,
-#         "OpenAI",
+#         "Bedrock",
 #         {
-#           token: $openAiApiKey,
-#           endpoint: $openAiEndpoint
+#           accessKeyId: $accessKeyId,
+#           secretAccessKey: $secretAccessKey,
+#           model: 'amazon.titan-embed-text-v1',
+#           region: 'us-west-2'
 #         }) AS vector
 #     WITH hp, vector
 #     WHERE vector IS NOT NULL
 #     CALL db.create.setNodeVectorProperty(hp, "comprehensiveEmbedding", vector)
 #     """,
 #     params={
-#         "openAiApiKey": OPENAI_API_KEY,
-#         "openAiEndpoint": OPENAI_ENDPOINT,
+#         "accessKeyId": accessKeyId,
+#         "secretAccessKey": secretAccessKey,
 #     },
 # )
 
-# result = kg.query(
-#     """
-#     MATCH (hp:HealthcareProvider)
-#     WHERE hp.bio IS NOT NULL
-#     RETURN hp.bio, hp.name, hp.comprehensiveEmbedding
-#     LIMIT 5
-#     """
-# )
-# # loop through the results
-# for record in result:
-#     print(f" bio: {record["hp.bio"]}, name: {record["hp.name"]}")
+result = kg.query(
+    """
+    MATCH (hp:HealthcareProvider)
+    WHERE hp.bio IS NOT NULL
+    RETURN hp.bio, hp.name, hp.comprehensiveEmbedding
+    LIMIT 5
+    """
+)
+# loop through the results
+for record in result:
+    print(f" bio: {record["hp.bio"]}, name: {record["hp.name"]}")
+
+print("=" * 50)
+
 
 # == Queerying the graph for a healthcare provider
 question = "give me a list of healthcare providers in the area of dermatology"
 
+print(f"Question: {question}")
+print("=" * 25)
 # # Execute the query
 result = kg.query(
     """
     WITH genai.vector.encode(
         $question,
-        "OpenAI",
+        "Bedrock",
         {
-          token: $openAiApiKey,
-          endpoint: $openAiEndpoint
+          accessKeyId: $accessKeyId,
+          secretAccessKey: $secretAccessKey,
+          model: 'amazon.titan-embed-text-v1',
+          region: 'us-west-2'
         }) AS question_embedding
     CALL db.index.vector.queryNodes(
         'health_providers_embeddings',
@@ -103,8 +112,8 @@ result = kg.query(
     RETURN healthcare_provider.name, healthcare_provider.bio, score
     """,
     params={
-        "openAiApiKey": OPENAI_API_KEY,
-        "openAiEndpoint": OPENAI_ENDPOINT,
+        "accessKeyId": accessKeyId,
+        "secretAccessKey": secretAccessKey,
         "question": question,
         "top_k": 3,
     },

@@ -139,12 +139,16 @@ RETURN n.name AS name
 """
 
 if __name__ == "__main__":
+
+   # connect_and_query()
+
     # Build the knowledge graph
     # build_knowledge_graph()
 
-    # query_graph_simple(
-    #     simple_query
-    # )
+    query_graph_simple(
+        simple_query
+    )
+    
     query_graph(einstein_query)
 
 

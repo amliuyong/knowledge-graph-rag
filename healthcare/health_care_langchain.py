@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 
 load_dotenv()
 
@@ -37,6 +37,8 @@ res = kg.query(cypher)
 print(f"There are {res[0]['numberOfProviders']} Healthcare Providers in this graph.")
 
 
+# exit(0)
+
 # return the names of the Healthcare Providers
 cypher = """
   MATCH (n:HealthcareProvider) 
@@ -46,6 +48,8 @@ res = kg.query(cypher)
 print("Healthcare Providers:")
 for r in res:
     print(r["ProviderName"])
+
+# exit(0)
 
 # list all patients in the graph
 cypher = """
@@ -58,6 +62,7 @@ print("Patients:")
 for r in res:
     print(r["PatientName"])
 
+# exit(0)
 
 # list all Specializations in the graph
 cypher = """
@@ -68,6 +73,8 @@ res = kg.query(cypher)
 print("Specializations:")
 for r in res:
     print(r["SpecializationName"])
+
+
 
 
 # list all Locations in the graph
@@ -82,26 +89,34 @@ for r in res:
     print(r["LocationName"])
 
 
+
+
 # list all patients treated by a specific provider
 cypher = """
-  MATCH (hp:HealthcareProvider {name: 'Dr. Smith'})-[:TREATS]->(p:Patient) 
+  MATCH (hp:HealthcareProvider {name: 'Dr. John Smith'})-[:TREATS]->(p:Patient) 
   RETURN p.name AS PatientName
   """
 res = kg.query(cypher)
-print("Patients treated by Dr. Smith:")
+print("Patients treated by Dr. John Smith:")
 for r in res:
     print(r["PatientName"])
+
+
 
 # And More...
 # list all Specializations of a specific provider
 cypher = """
-  MATCH (hp:HealthcareProvider {name: 'Dr. Smith'})-[:SPECIALIZES_IN]->(s:Specialization) 
+  MATCH (hp:HealthcareProvider {name: 'Dr. John Smith'})-[:SPECIALIZES_IN]->(s:Specialization) 
   RETURN s.name AS SpecializationName
   """
 res = kg.query(cypher)
-print("Specializations of Dr. Smith:")
+print("Specializations of Dr. John Smith:")
 for r in res:
     print(r["SpecializationName"])
+
+
+exit(0)
+
 
 # 4. List All Healthcare Providers Located in a Specific Location
 cypher = """
